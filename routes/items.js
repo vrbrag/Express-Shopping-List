@@ -1,0 +1,55 @@
+const express = require('express')
+const router = new express.Router()
+const ExpressError = require("../expressError")
+const items = require("../fakeDB")
+
+
+router.get('/', function (req, res) {
+   res.json({ items });
+});
+
+router.post('/', function (req, res, next) {
+   try {
+      if (!req.body.name || !req.body.price)
+         throw new ExpressError('Item must have a name', 400);
+      const newItem = { name: req.body.name, price: req.body.price };
+      items.push(newItem);
+      return res.status(201).json({ item: newItem });
+   } catch (e) {
+      return next(e);
+   }
+});
+
+router.get('/:name', function (req, res) {
+   const foundItem = items.find(item => item.name === req.params.name);
+   if (foundItem === undefined) {
+      throw new ExpressError('Item not found', 404);
+   }
+   return res.json({ item: foundItem });
+});
+
+router.patch('/:name', function (req, res) {
+   const foundItem = items.find(item => item.name === req.params.name)
+   if (foundItem === undefined) {
+      throw new ExpressError("Item not found", 404)
+   }
+   if (foundItem.name) foundItem.name = req.body.name
+   if (foundItem.price) foundItem.price = req.body.price
+   res.json({ item: foundItem })
+})
+
+router.delete('/:name', function (req, res) {
+   const foundItem = items.find(item => item.name === req.params.name)
+   try {
+      if (foundItem === -1) {
+         throw new ExpressError('Item not found', 404);
+      }
+      items.splice(foundItem, 1)
+      res.json({ message: 'Deleted' })
+   } catch (e) {
+      return next(e)
+   }
+})
+
+
+module.exports = router
